@@ -1,5 +1,6 @@
 import urllib2
 import pprint
+import re
 from datetime import date
 
 from bs4 import BeautifulSoup
@@ -18,18 +19,34 @@ def main():
     req = urllib2.Request(stripURL, None, { 'User-Agent' : 'CalvinBot 1.0' })
     response = urllib2.urlopen(req)
     html = response.read()
-    imageURL = extract_image_url(html)
+    imageURL = extract_high_rez_image_url(html)
+    # Trick RES into displaying the imagine inline
+    imageURL += '?f.jpg'
     print "Posting '%s', '%s'" % (stripTitle, imageURL)
 
     # Post it to Reddit
     r = praw.Reddit(user_agent="CalvinBot")
     r.login('calvinbot', 'webpasswd')
-    r.submit('calvinbot', stripTitle, url=imageURL)
     
+    # Production
+    r.submit('calvinandhobbes', stripTitle, url=imageURL)
+
+    # Testing
+    #    r.submit('calvinbot', stripTitle, url=imageURL)
+    
+
+# Old extraction method (lower rez image)
 def extract_image_url(html):
     soup = BeautifulSoup(html)
     url_meta = soup.find('meta', attrs={'property': 'og:image', 'content': True})
     url = url_meta['content']
+    return url
+
+def extract_high_rez_image_url(html):
+    soup = BeautifulSoup(html)
+    tag = soup.find(src=re.compile("width=900"))
+    url = tag['src']
+    url = re.sub('\?width=900', '', url)
     return url
     
 def pull_rss():
