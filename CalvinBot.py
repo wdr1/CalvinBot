@@ -45,6 +45,7 @@ def main():
     subreddit = 'calvinandhobbes'
     if args.debug:
         subreddit = 'calvinbot'
+        print "Subreddit set to '%s'" % (subreddit)
 
     # Today's URL & Title
     d = date.today() - timedelta(days=args.daysback)
@@ -58,7 +59,7 @@ def main():
     html = response.read()
     imageURL = extract_high_rez_image_url(html)
     
-    print "Posting to '%s', '%s', '%s'" % (subreddit, stripTitle, imageURL)
+    print "Posting\n \tSubreddit: '%s'\n \tTitle: '%s'\n \tImage URL: '%s'" % (subreddit, stripTitle, imageURL)
 
     # Post it to Reddit
     r = praw.Reddit(user_agent=useragent,
@@ -70,6 +71,8 @@ def main():
     r.login(username, password, disable_warning=True)
     if not args.dryrun:
         r.submit(subreddit, stripTitle, url=imageURL)
+    else:
+        print "Not submitting (dryrun mode enabled)"
 
 # Old extraction method (lower rez image)
 def extract_image_url(html):
@@ -79,7 +82,7 @@ def extract_image_url(html):
     return url
 
 def extract_high_rez_image_url(html):
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html)
     tag = ( soup.findAll("img", { "class" : "strip" }) )[1]
     url = tag['src']
     # Trick RES into displaying the imagine inline
