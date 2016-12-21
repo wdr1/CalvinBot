@@ -2,6 +2,7 @@ import urllib2
 import pprint
 import re
 from datetime import date
+import ConfigParser
 
 from bs4 import BeautifulSoup
 import praw
@@ -9,6 +10,15 @@ import praw
 pp = pprint.PrettyPrinter(indent=4)
 
 def main():
+    # Basic config 
+    Config = ConfigParser.ConfigParser()
+    Config.read("calvinbot.config")
+    username = Config.get('Global', 'username')
+    password = Config.get('Global', 'password')
+    useragent = Config.get('Global', 'useragent')
+    client_id = Config.get('Global', 'client_id')
+    client_secret = Config.get('Global', 'client_secret')
+    
     # Today's URL & Title
     d = date.today()
     stripURL = d.strftime("http://www.gocomics.com/calvinandhobbes/%Y/%m/%d")
@@ -19,25 +29,30 @@ def main():
     req = urllib2.Request(stripURL, None, { 'User-Agent' : 'CalvinBot 1.0' })
     response = urllib2.urlopen(req)
     html = response.read()
-    imageURL = extract_high_rez_image_url(html)
+    imageURL = extract_image_url(html)
     # Trick RES into displaying the imagine inline
     imageURL += '?f.jpg'
     print "Posting '%s', '%s'" % (stripTitle, imageURL)
 
     # Post it to Reddit
-    r = praw.Reddit(user_agent="CalvinBot")
-    r.login('calvinbot', 'webpasswd')
+    r = praw.Reddit(user_agent=useragent,
+                    username=username,
+                    password=password,
+                    client_id=client_id,
+                    client_secret=client_secret
+    )
+    r.login(username, password)
     
     # Production
-    r.submit('calvinandhobbes', stripTitle, url=imageURL)
+#    r.submit('calvinandhobbes', stripTitle, url=imageURL)
 
     # Testing
-    #    r.submit('calvinbot', stripTitle, url=imageURL)
+    r.submit('calvinbot', stripTitle, url=imageURL)
     
 
 # Old extraction method (lower rez image)
 def extract_image_url(html):
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, "html.parser")
     url_meta = soup.find('meta', attrs={'property': 'og:image', 'content': True})
     url = url_meta['content']
     return url
