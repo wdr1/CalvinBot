@@ -1,7 +1,7 @@
 import urllib2
 import pprint
 import re
-from datetime import date
+from datetime import date, timedelta
 import ConfigParser
 import argparse
 
@@ -33,6 +33,13 @@ def main():
         action="store_true"
     )
 
+    parser.add_argument(
+        '-b', '--daysback',
+        help="Pretend it was X days ago",
+        type=int,
+        default=0
+    )
+
     # Which subreddit
     args = parser.parse_args()
     subreddit = 'calvinandhobbes'
@@ -40,8 +47,7 @@ def main():
         subreddit = 'calvinbot'
 
     # Today's URL & Title
-    d = date.today()
-#    d = d - timedelta(days=2)
+    d = date.today() - timedelta(days=args.daysback)
     stripURL = d.strftime("http://www.gocomics.com/calvinandhobbes/%Y/%m/%d")
     print "stripURL: '%s'" % stripURL
     stripTitle = d.strftime("Calvin & Hobbes for %B %e, %Y")
@@ -73,14 +79,11 @@ def extract_image_url(html):
     return url
 
 def extract_high_rez_image_url(html):
-    print "Looking for hi rez urls, yo"
     soup = BeautifulSoup(html, "html.parser")
     tag = ( soup.findAll("img", { "class" : "strip" }) )[1]
-    pp.pprint(tag)
     url = tag['src']
     # Trick RES into displaying the imagine inline
     url += '.jpg'
-    
     return url
     
 def pull_rss():
