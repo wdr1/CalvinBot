@@ -41,6 +41,7 @@ def main():
 
     # Today's URL & Title
     d = date.today()
+#    d = d - timedelta(days=2)
     stripURL = d.strftime("http://www.gocomics.com/calvinandhobbes/%Y/%m/%d")
     print "stripURL: '%s'" % stripURL
     stripTitle = d.strftime("Calvin & Hobbes for %B %e, %Y")
@@ -49,9 +50,8 @@ def main():
     req = urllib2.Request(stripURL, None, { 'User-Agent' : 'CalvinBot 1.0' })
     response = urllib2.urlopen(req)
     html = response.read()
-    imageURL = extract_image_url(html)
-    # Trick RES into displaying the imagine inline
-    imageURL += '?f.jpg'
+    imageURL = extract_high_rez_image_url(html)
+    
     print "Posting to '%s', '%s', '%s'" % (subreddit, stripTitle, imageURL)
 
     # Post it to Reddit
@@ -61,7 +61,7 @@ def main():
                     client_id=client_id,
                     client_secret=client_secret
     )
-    r.login(username, password)
+    r.login(username, password, disable_warning=True)
     if not args.dryrun:
         r.submit(subreddit, stripTitle, url=imageURL)
 
@@ -73,10 +73,14 @@ def extract_image_url(html):
     return url
 
 def extract_high_rez_image_url(html):
-    soup = BeautifulSoup(html)
-    tag = soup.find(src=re.compile("width=900"))
+    print "Looking for hi rez urls, yo"
+    soup = BeautifulSoup(html, "html.parser")
+    tag = ( soup.findAll("img", { "class" : "strip" }) )[1]
+    pp.pprint(tag)
     url = tag['src']
-    url = re.sub('\?width=900', '', url)
+    # Trick RES into displaying the imagine inline
+    url += '.jpg'
+    
     return url
     
 def pull_rss():
