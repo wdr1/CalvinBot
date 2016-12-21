@@ -3,6 +3,7 @@ import pprint
 import re
 from datetime import date
 import ConfigParser
+import argparse
 
 from bs4 import BeautifulSoup
 import praw
@@ -18,7 +19,26 @@ def main():
     useragent = Config.get('Global', 'useragent')
     client_id = Config.get('Global', 'client_id')
     client_secret = Config.get('Global', 'client_secret')
-    
+
+    # CLI options
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-d', '--debug',
+        help="Print debugging & if submitting, switch to /r/calvinbot",
+        action="store_true"
+    )
+    parser.add_argument(
+        '-n', '--dryrun',
+        help="Don't submit new post",
+        action="store_true"
+    )
+
+    # Which subreddit
+    args = parser.parse_args()
+    subreddit = 'calvinandhobbes'
+    if args.debug:
+        subreddit = 'calvinbot'
+
     # Today's URL & Title
     d = date.today()
     stripURL = d.strftime("http://www.gocomics.com/calvinandhobbes/%Y/%m/%d")
@@ -32,7 +52,7 @@ def main():
     imageURL = extract_image_url(html)
     # Trick RES into displaying the imagine inline
     imageURL += '?f.jpg'
-    print "Posting '%s', '%s'" % (stripTitle, imageURL)
+    print "Posting to '%s', '%s', '%s'" % (subreddit, stripTitle, imageURL)
 
     # Post it to Reddit
     r = praw.Reddit(user_agent=useragent,
@@ -42,13 +62,8 @@ def main():
                     client_secret=client_secret
     )
     r.login(username, password)
-    
-    # Production
-#    r.submit('calvinandhobbes', stripTitle, url=imageURL)
-
-    # Testing
-    r.submit('calvinbot', stripTitle, url=imageURL)
-    
+    if not args.dryrun:
+        r.submit(subreddit, stripTitle, url=imageURL)
 
 # Old extraction method (lower rez image)
 def extract_image_url(html):
