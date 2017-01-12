@@ -57,7 +57,7 @@ def main():
     req = urllib2.Request(stripURL, None, { 'User-Agent' : 'CalvinBot 1.0' })
     response = urllib2.urlopen(req)
     html = response.read()
-    imageURL = extract_high_rez_image_url(html)
+    imageURL = extract_image_url(html)
     
     print "Posting\n \tSubreddit: '%s'\n \tTitle: '%s'\n \tImage URL: '%s'" % (subreddit, stripTitle, imageURL)
 
@@ -79,6 +79,8 @@ def extract_image_url(html):
     soup = BeautifulSoup(html, "html.parser")
     url_meta = soup.find('meta', attrs={'property': 'og:image', 'content': True})
     url = url_meta['content']
+    # Trick RES into displaying the imagine inline
+    url += '.jpg'
     return url
 
 def extract_high_rez_image_url(html):
